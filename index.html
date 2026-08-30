@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f7f5f2">
+<title>SoulScript — words from within</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #f7f5f2;
+  --text: #1c1b1a;
+  --muted: #8a8680;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+body {
+  color: var(--text);
+  background: var(--bg);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; border: none; background: none; color: inherit; }
+button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid #b8a99a; outline-offset: 2px;
+}
+
+.scene {
+  position: fixed; inset: 0; z-index: -3;
+  background: linear-gradient(180deg, #f9f7f4 0%, #f2efe9 50%, #ebe7e0 100%);
+}
+.scene::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 70% 10%, rgba(220, 200, 180, 0.25), transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(200, 190, 175, 0.2), transparent 45%);
+}
+
+.app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 16px 120px;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 52px;
+  margin-bottom: 12px;
+}
+.feather {
+  position: absolute;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.feather:active { transform: scale(0.94); }
+.brand { text-align: center; user-select: none; }
+.brand h1 {
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(32px, 6vw, 42px);
+  font-weight: 500;
+  letter-spacing: -1px;
+  color: #1c1b1a;
+  cursor: default;
+}
+.brand p {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Creator mode badge */
+.creator-badge {
+  display: none;
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #8a7a6a;
+  background: rgba(0,0,0,0.04);
+  padding: 3px 10px;
+  border-radius: 20px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+body.creator-mode .creator-badge { display: inline-block; }
+
+.intro {
+  margin: 8px 0 20px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  text-align: center;
+}
+.intro p {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #5c5954;
+}
+.search-bar { margin-top: 14px; }
+.search-bar input {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text);
+  padding: 11px 14px;
+  border-radius: 12px;
+  outline: none;
+  font-size: 13.5px;
+}
+.search-bar input::placeholder { color: #a09b94; }
+
+.sectionbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 2px 12px;
+}
+.sectionbar h2 {
+  font: 500 16px "Cormorant Garamond", serif;
+}
+.sectionbar span { font-size: 11px; color: var(--muted); }
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.card:active { transform: scale(0.985); }
+.card .tag {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #9a948c;
+  margin-bottom: 4px;
+}
+.card h3 {
+  font: 500 18px "Cormorant Garamond", serif;
+  color: #1c1b1a;
+}
+.card .meta {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+.heartBtn {
+  font-size: 15px;
+  color: #a09b94;
+  padding: 2px 4px;
+}
+.heartBtn:active { color: #c47a7a; }
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  border-radius: 18px;
+  color: var(--muted);
+}
+.empty h3 {
+  font: 500 22px "Cormorant Garamond", serif;
+  color: #1c1b1a;
+  margin-bottom: 6px;
+}
+.empty p { font-size: 13px; line-height: 1.5; }
+
+/* Bottom nav – 3 buttons by default, 4 when creator */
+.bottom {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  width: min(360px, calc(100% - 24px));
+  padding: 6px;
+  border-radius: 22px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+}
+body.creator-mode .bottom {
+  grid-template-columns: repeat(4, 1fr);
+}
+.navBtn {
+  border-radius: 16px;
+  padding: 9px 3px;
+  font-size: 9.5px;
+  color: #7a756e;
+}
+.navBtn .icon {
+  display: block;
+  font-size: 17px;
+  color: #1c1b1a;
+  margin-bottom: 2px;
+}
+.navBtn:active { background: rgba(0, 0, 0, 0.04); }
+.navBtn.add-btn {
+  display: none;
+  background: rgba(28, 27, 26, 0.08);
+  color: #1c1b1a;
+}
+body.creator-mode .navBtn.add-btn { display: block; }
+.navBtn.add-btn .icon { font-size: 20px; }
+
+.overlay {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.overlay.show { display: flex; }
+
+.modal {
+  position: relative;
+  width: min(480px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+}
+.modal h2 {
+  font: 500 22px "Cormorant Garamond", serif;
+  margin: 0;
+}
+.close {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: #1c1b1a;
+  font-size: 17px;
+  display: grid;
+  place-items: center;
+}
+.modalHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8a8680;
+  margin: 12px 0 5px;
+}
+input, textarea, select {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  outline: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text);
+  padding: 11px 13px;
+  font-size: 13.5px;
+}
+select option { background: #fff; }
+textarea { min-height: 80px; resize: vertical; }
+.formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.primary {
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px;
+  border-radius: 14px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13.5px;
+  background: #1c1b1a;
+}
+.primary:active { opacity: 0.85; }
+
+.delete-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  color: #c45c5c;
+  font-weight: 500;
+  font-size: 13.5px;
+  background: rgba(196, 92, 92, 0.08);
+  border: 1px solid rgba(196, 92, 92, 0.15);
+}
+.delete-btn:active { background: rgba(196, 92, 92, 0.15); }
+
+.upload {
+  border: 1.5px dashed rgba(0, 0, 0, 0.12);
+  border-radius: 14px;
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.4);
+  margin-bottom: 4px;
+}
+.upload input { display: none; }
+.upload label {
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #1c1b1a;
+  font-size: 13px;
+  cursor: pointer;
+}
+.preview {
+  max-height: 150px;
+  max-width: 100%;
+  border-radius: 10px;
+  object-fit: contain;
+  margin-top: 8px;
+}
+
+.reader {
+  width: min(560px, 100%);
+  padding: 14px;
+  max-height: 92vh;
+}
+.readerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 2px 12px;
+}
+.readerTop .readerTitle {
+  font: 500 18px "Cormorant Garamond", serif;
+}
+.readerImage {
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #f0ede8;
+}
+.readerNoImage {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  background: #f0ede8;
+  border-radius: 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.readerInfo {
+  padding: 14px 4px 4px;
+}
+.readerInfo .tag {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #9a948c;
+  margin-bottom: 4px;
+}
+.readerInfo h2 {
+  font: 500 24px "Cormorant Garamond", serif;
+  margin: 0 0 6px;
+}
+.readerInfo p {
+  color: #5c5954;
+  line-height: 1.6;
+  font-size: 14px;
+  margin-top: 10px;
+  white-space: pre-wrap;
+}
+.readerMeta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.drawer {
+  position: fixed;
+  z-index: 60;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: min(300px, 85%);
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+}
+.drawer.show { transform: translateX(0); }
+.drawer h2 {
+  font: 500 26px "Cormorant Garamond", serif;
+  margin: 44px 0 6px;
+}
+.drawer p {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.menuItem {
+  width: 100%;
+  text-align: left;
+  margin-top: 5px;
+  padding: 12px 13px;
+  border-radius: 12px;
+  color: #1c1b1a;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+.menuItem:active { background: rgba(0, 0, 0, 0.06); }
+.menuItem small {
+  display: block;
+  color: var(--muted);
+  margin-top: 2px;
+  font-size: 11px;
+}
+.menuItem.exit-creator {
+  display: none;
+  color: #c45c5c;
+}
+body.creator-mode .menuItem.exit-creator { display: block; }
+
+.toast {
+  position: fixed;
+  z-index: 100;
+  left: 50%;
+  bottom: 90px;
+  transform: translate(-50%, 10px);
+  opacity: 0;
+  background: #1c1b1a;
+  color: #f7f5f2;
+  border-radius: 12px;
+  padding: 10px 15px;
+  font-size: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  font-weight: 500;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 540px) {
+  .app { padding: 14px 12px 110px; }
+  .brand h1 { font-size: 34px; }
+  .formGrid { grid-template-columns: 1fr; }
+  .bottom { bottom: 10px; width: calc(100% - 18px); }
+}
+</style>
+</head>
+
+<body>
+<div class="scene"></div>
+
+<main class="app">
+  <header class="header">
+    <button class="feather" onclick="openMenu()" aria-label="Open menu">✦</button>
+    <div class="brand" id="brandArea">
+      <h1 id="brandTitle">SoulScript</h1>
+      <p>words from within</p>
+      <div class="creator-badge">Creator Mode</div>
+    </div>
+  </header>
+
+  <section class="intro glass">
+    <p id="introText">
+      A quiet sanctuary for the written word — where fleeting thoughts find permanence, and the heart learns to speak. 
+      Created by Abhijeet Mohanty as a personal archive of reflections, poetry, stories, and the quiet truths that often remain unspoken.
+    </p>
+    <div class="search-bar">
+      <input id="search" placeholder="Search..." autocomplete="off">
+    </div>
+  </section>
+
+  <div class="sectionbar">
+    <h2>Pages</h2>
+    <span id="count"></span>
+  </div>
+
+  <section id="feed" class="feed"></section>
+</main>
+
+<nav class="bottom" aria-label="Main navigation">
+  <button class="navBtn" onclick="openFeedback()"><span class="icon">♡</span>Feedback</button>
+  <button class="navBtn" onclick="openMenu()"><span class="icon">☰</span>Menu</button>
+  <button class="navBtn" onclick="contact()"><span class="icon">✉</span>Contact</button>
+  <button class="navBtn add-btn" onclick="openPost()"><span class="icon">＋</span>Add</button>
+</nav>
+
+<!-- Reader -->
+<div class="overlay" id="readerOverlay" onclick="if(event.target===this)closeReader()">
+  <div class="modal reader">
+    <div class="readerTop">
+      <span class="readerTitle">SoulScript</span>
+      <button class="close" onclick="closeReader()">×</button>
+    </div>
+    <div id="readerContent"></div>
+  </div>
+</div>
+
+<!-- Feedback -->
+<div class="overlay" id="feedbackOverlay" onclick="if(event.target===this)closeFeedback()">
+  <form class="modal" onsubmit="submitFeedback(event)">
+    <div class="modalHead">
+      <h2>Your Feedback</h2>
+      <button type="button" class="close" onclick="closeFeedback()">×</button>
+    </div>
+    <label>Message</label>
+    <textarea id="feedbackText" required maxlength="500" placeholder="Tell me what you think..."></textarea>
+    <label>Your name (optional)</label>
+    <input id="feedbackName" maxlength="60" placeholder="Anonymous">
+    <button class="primary">Send Feedback</button>
+  </form>
+</div>
+
+<!-- Creator upload form -->
+<div class="overlay" id="postOverlay" onclick="if(event.target===this)closePost()">
+  <form class="modal" onsubmit="addPost(event)">
+    <div class="modalHead">
+      <h2>Add New Page</h2>
+      <button type="button" class="close" onclick="closePost()">×</button>
+    </div>
+
+    <div class="upload">
+      <div>
+        <div style="font-size:22px;margin-bottom:4px">⌁</div>
+        <label for="postImage">Upload handwritten image</label>
+        <div style="color:#8a8680;font-size:11px;margin-top:4px">JPG, PNG or WEBP · under 4 MB</div>
+        <input id="postImage" type="file" accept="image/*" onchange="previewImage(event)">
+        <img id="preview" class="preview" hidden>
+      </div>
+    </div>
+
+    <div class="formGrid">
+      <div>
+        <label>Title</label>
+        <input id="postTitle" required maxlength="80" placeholder="e.g. A Late Night Thought">
+      </div>
+      <div>
+        <label>Type</label>
+        <select id="postType">
+          <option>Quote</option>
+          <option>Poem</option>
+          <option>Story</option>
+          <option>Thought</option>
+        </select>
+      </div>
+    </div>
+    <label>Description (optional)</label>
+    <textarea id="postDesc" maxlength="500" placeholder="A short note about this piece..."></textarea>
+    <button class="primary">Post It</button>
+  </form>
+</div>
+
+<!-- Menu -->
+<aside class="drawer" id="drawer">
+  <button class="close" style="position:absolute;top:16px;right:16px" onclick="closeMenu()">×</button>
+  <h2>Menu</h2>
+  <p>A quiet public space for thoughts, quotes, poems and stories. Made by Abhijeet Mohanty.</p>
+  <button class="menuItem" onclick="closeMenu();window.scrollTo({top:0,behavior:'smooth'})">
+    ⌂ &nbsp; Home<small>All pages</small>
+  </button>
+  <button class="menuItem" onclick="about()">
+    ◎ &nbsp; About Me<small>Who's behind this?</small>
+  </button>
+  <button class="menuItem exit-creator" onclick="exitCreatorMode()">
+    ← &nbsp; Exit Creator Mode<small>Return to visitor view</small>
+  </button>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== SECRET CREATOR SETTINGS ===================== */
+const CREATOR_PASSWORD = "1605";
+/* ================================================================== */
+
+const STORAGE_KEY = "soulscript_posts_v5";
+const FEEDBACK_KEY = "soulscript_feedback_v5";
+
+const starterPosts = [];
+let posts = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || starterPosts;
+let selectedImage = "";
+let currentReaderId = null;
+let isCreator = sessionStorage.getItem("soulscript_creator") === "true";
+
+/* Apply creator mode on load if already unlocked this session */
+if (isCreator) {
+  document.body.classList.add("creator-mode");
+}
+
+/* Triple-tap on the title to unlock Creator Mode */
+let tapCount = 0;
+let tapTimer = null;
+
+document.getElementById("brandTitle").addEventListener("click", function() {
+  if (isCreator) return; // already in creator mode
+  tapCount++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(() => { tapCount = 0; }, 800);
+
+  if (tapCount >= 3) {
+    tapCount = 0;
+    askCreatorPassword();
+  }
+});
+
+function askCreatorPassword() {
+  const pw = prompt("Enter creator password:");
+  if (pw === null) return;
+  if (pw === CREATOR_PASSWORD) {
+    enterCreatorMode();
+  } else {
+    toast("Incorrect password");
+  }
+}
+
+function enterCreatorMode() {
+  isCreator = true;
+  sessionStorage.setItem("soulscript_creator", "true");
+  document.body.classList.add("creator-mode");
+  toast("Creator Mode unlocked");
+  // If a page is open, refresh it so the Delete button appears
+  if (currentReaderId) openReader(currentReaderId);
+}
+
+function exitCreatorMode() {
+  isCreator = false;
+  sessionStorage.removeItem("soulscript_creator");
+  document.body.classList.remove("creator-mode");
+  closeMenu();
+  closePost();
+  // If a page is open, refresh it so the Delete button disappears
+  if (currentReaderId) openReader(currentReaderId);
+  toast("Returned to visitor view");
+}
+
+function savePosts() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+  } catch (e) {
+    toast("Storage full — try a smaller image.");
+  }
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  }[c]));
+}
+
+function render() {
+  const query = document.getElementById("search").value.toLowerCase().trim();
+
+  const list = posts.filter(p => {
+    const text = `${p.title} ${p.description || ""} ${p.type}`.toLowerCase();
+    return text.includes(query);
+  });
+
+  document.getElementById("count").textContent =
+    list.length === 0 ? "No pages yet" : `${list.length} ${list.length === 1 ? "page" : "pages"}`;
+
+  const feed = document.getElementById("feed");
+
+  if (!list.length) {
+    feed.innerHTML = `
+      <div class="empty glass">
+        <h3>Nothing here yet</h3>
+        <p>Pages will appear here once they are added.</p>
+      </div>`;
+    return;
+  }
+
+  feed.innerHTML = list.map(p => `
+    <article class="card" onclick="openReader('${esc(p.id)}')">
+      <div class="tag">${esc(p.type)}</div>
+      <h3>${esc(p.title)}</h3>
+      <div class="meta">
+        <span>${esc(p.date)}</span>
+        <button class="heartBtn" onclick="event.stopPropagation();likePost('${esc(p.id)}')" aria-label="Like">♡ ${p.likes || 0}</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function likePost(id) {
+  const p = posts.find(x => x.id === id);
+  if (!p) return;
+  p.likes = (p.likes || 0) + 1;
+  savePosts();
+  render();
+  toast("Saved ♡");
+}
+
+function openReader(id) {
+  const p = posts.find(x => x.id === id);
+  if (!p) return;
+  currentReaderId = id;
+
+  // Delete button is only added to the page when in Creator Mode
+  const deleteButton = isCreator
+    ? `<button class="delete-btn" onclick="deletePost('${esc(p.id)}')">Delete this page</button>`
+    : "";
+
+  document.getElementById("readerContent").innerHTML = `
+    ${p.image
+      ? `<img class="readerImage" src="${p.image}" alt="${esc(p.title)}">`
+      : `<div class="readerNoImage">No image uploaded</div>`
+    }
+    <div class="readerInfo">
+      <div class="tag">${esc(p.type)}</div>
+      <h2>${esc(p.title)}</h2>
+      <div class="readerMeta">
+        <span>${esc(p.date)}</span>
+        <span>♡ ${p.likes || 0}</span>
+      </div>
+      ${p.description ? `<p>${esc(p.description)}</p>` : ""}
+      ${deleteButton}
+    </div>`;
+  document.getElementById("readerOverlay").classList.add("show");
+}
+
+function closeReader() {
+  document.getElementById("readerOverlay").classList.remove("show");
+  currentReaderId = null;
+}
+
+function deletePost(id) {
+  if (!isCreator) {
+    toast("Only the creator can delete pages");
+    return;
+  }
+  if (!confirm("Delete this page permanently?")) return;
+  posts = posts.filter(p => p.id !== id);
+  savePosts();
+  closeReader();
+  render();
+  toast("Page deleted");
+}
+
+document.getElementById("search").addEventListener("input", render);
+
+function openFeedback() { document.getElementById("feedbackOverlay").classList.add("show"); }
+function closeFeedback() { document.getElementById("feedbackOverlay").classList.remove("show"); }
+function submitFeedback(e) {
+  e.preventDefault();
+  const data = JSON.parse(localStorage.getItem(FEEDBACK_KEY) || "[]");
+  data.unshift({
+    message: document.getElementById("feedbackText").value.trim(),
+    name: document.getElementById("feedbackName").value.trim() || "Anonymous",
+    date: new Date().toISOString()
+  });
+  localStorage.setItem(FEEDBACK_KEY, JSON.stringify(data));
+  e.target.reset();
+  closeFeedback();
+  toast("Thank you");
+}
+
+function openPost() {
+  if (!isCreator) {
+    toast("Creator Mode required");
+    return;
+  }
+  document.getElementById("postOverlay").classList.add("show");
+}
+function closePost() {
+  document.getElementById("postOverlay").classList.remove("show");
+  selectedImage = "";
+  document.getElementById("preview").hidden = true;
+  document.getElementById("preview").src = "";
+  document.getElementById("postImage").value = "";
+}
+
+function previewImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) {
+    event.target.value = "";
+    toast("Please choose an image under 4 MB.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    selectedImage = reader.result;
+    const img = document.getElementById("preview");
+    img.src = selectedImage;
+    img.hidden = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addPost(e) {
+  e.preventDefault();
+  if (!isCreator) return;
+  posts.unshift({
+    id: "p" + Date.now(),
+    title: document.getElementById("postTitle").value.trim(),
+    type: document.getElementById("postType").value,
+    description: document.getElementById("postDesc").value.trim(),
+    image: selectedImage,
+    date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+    likes: 0
+  });
+  savePosts();
+  e.target.reset();
+  closePost();
+  render();
+  toast("Your page is live");
+}
+
+function openMenu() { document.getElementById("drawer").classList.add("show"); }
+function closeMenu() { document.getElementById("drawer").classList.remove("show"); }
+
+function about() {
+  closeMenu();
+  toast("SoulScript by Abhijeet Mohanty");
+}
+
+function contact() {
+  window.location.href = "mailto:abhijeetmohanty2305@gmail.com?subject=SoulScript";
+}
+
+function toast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(window.__toast);
+  window.__toast = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+render();
+</script>
+</body>
+</html>
